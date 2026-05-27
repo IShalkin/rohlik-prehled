@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rohlík přehled — zdraví & úspory</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1419;
+    --card: #1a1f29;
+    --border: #2a3441;
+    --text: #e6edf3;
+    --muted: #8b96a7;
+    --accent: #00b53f;
+    --accent-soft: rgba(0, 181, 63, 0.12);
+    --warn: #ffb547;
+    --warn-soft: rgba(255, 181, 71, 0.12);
+    --danger: #ff5c5c;
+    --danger-soft: rgba(255, 92, 92, 0.12);
+    --good: #4fc3f7;
+    --good-soft: rgba(79, 195, 247, 0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.5; }
+  .container { max-width: 1280px; margin: 0 auto; padding: 32px 24px 64px; }
+  header.hero { margin-bottom: 32px; padding: 32px; background: linear-gradient(135deg, #00b53f 0%, #008a2f 100%); border-radius: 16px; color: white; }
+  header.hero h1 { margin: 0 0 8px 0; font-size: 28px; font-weight: 700; }
+  header.hero p { margin: 0; opacity: 0.9; font-size: 15px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .kpi-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 700; color: var(--text); }
+  .kpi-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+  .card h2 { margin: 0 0 4px 0; font-size: 18px; font-weight: 600; }
+  .card .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .chart-wrap { position: relative; height: 280px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-right: 6px; }
+  .badge.danger { background: var(--danger-soft); color: var(--danger); }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); }
+  .badge.good { background: var(--accent-soft); color: var(--accent); }
+  .badge.info { background: var(--good-soft); color: var(--good); }
+  .item-list { list-style: none; padding: 0; margin: 0; }
+  .item-list li { padding: 14px 0; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; }
+  .item-list li:last-child { border-bottom: none; }
+  .item-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .item-icon.danger { background: var(--danger-soft); }
+  .item-icon.warn { background: var(--warn-soft); }
+  .item-icon.good { background: var(--accent-soft); }
+  .item-icon.info { background: var(--good-soft); }
+  .item-text strong { display: block; margin-bottom: 4px; }
+  .item-text .desc { color: var(--muted); font-size: 13px; }
+  .item-meta { text-align: right; font-weight: 700; white-space: nowrap; }
+  .item-meta.danger { color: var(--danger); }
+  .item-meta.warn { color: var(--warn); }
+  .item-meta.good { color: var(--accent); }
+  .item-meta.info { color: var(--good); }
+  .full-card { margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .right { text-align: right; }
+  .savings-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .saving-box { padding: 14px; border-radius: 10px; background: var(--accent-soft); border: 1px solid rgba(0, 181, 63, 0.25); }
+  .saving-box .label { color: var(--muted); font-size: 12px; }
+  .saving-box .value { color: var(--accent); font-size: 22px; font-weight: 700; }
+  .footer { margin-top: 48px; text-align: center; color: var(--muted); font-size: 12px; }
+  .legend-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; color: var(--muted); }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="hero">
+    <h1>🛒 Rohlík přehled — zdraví &amp; úspory</h1>
+    <p>Personalizovaná analýza nákupů Ilia Shalkin · období 1. 4. – 27. 5. 2026 · 4 objednávky</p>
+  </header>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Celkem utraceno</div><div class="kpi-value">3 871 Kč</div><div class="kpi-sub">za poslední 2 měsíce</div></div>
+    <div class="kpi"><div class="kpi-label">Průměrná objednávka</div><div class="kpi-value">968 Kč</div><div class="kpi-sub">4 objednávky</div></div>
+    <div class="kpi"><div class="kpi-label">Trend</div><div class="kpi-value" style="color: var(--accent)">↓ 76,9 %</div><div class="kpi-sub">duben → květen</div></div>
+    <div class="kpi"><div class="kpi-label">Možná úspora / měsíc</div><div class="kpi-value" style="color: var(--accent)">~620 Kč</div><div class="kpi-sub">při změně návyků</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>📊 Útrata podle objednávky</h2>
+      <p class="subtitle">Hodnota každé objednávky v daném období</p>
+      <div class="chart-wrap"><canvas id="orderChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>🥦 Skladba košíku — kategorie</h2>
+      <p class="subtitle">Procentuální rozložení nákupů</p>
+      <div class="chart-wrap"><canvas id="categoryChart"></canvas></div>
+      <div class="legend-row">
+        <span><span class="dot" style="background:#4fc3f7"></span>Maso &amp; ryby</span>
+        <span><span class="dot" style="background:#00b53f"></span>Zelenina &amp; ovoce</span>
+        <span><span class="dot" style="background:#9ccc65"></span>Mléčné</span>
+        <span><span class="dot" style="background:#ffb547"></span>Pečivo &amp; cereálie</span>
+        <span><span class="dot" style="background:#ff5c5c"></span>Sladké &amp; snack</span>
+        <span><span class="dot" style="background:#ce93d8"></span>Hotová jídla</span>
+        <span><span class="dot" style="background:#90a4ae"></span>Ostatní</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>❤️ Co změnit pro zdraví</h2>
+      <p class="subtitle">Hlavní červené vlajky podle vašeho košíku</p>
+      <ul class="item-list">
+        <li><div class="item-icon danger">⚠️</div><div class="item-text"><strong>Léky na trávení v košíku</strong><div class="desc">RENNIE (pálení žáhy) + LOPERON (průjem) — silný signál, že strava drání váš trávicí systém. Ošetřete příčinu, ne symptom.</div></div><div class="item-meta danger">520 Kč</div></li>
+        <li><div class="item-icon danger">🍫</div><div class="item-text"><strong>Sladké snídaně 3× po sobě</strong><div class="desc">Nesquik + Chocapic + Bonavita XXL Jeníkův lup — průměr ~30 g cukru / porce. Místo toho zkuste ovesnou kaši s jogurtem (ten už pravidelně kupujete).</div></div><div class="item-meta danger">293 Kč</div></li>
+        <li><div class="item-icon warn">🍝</div><div class="item-text"><strong>Hotová Lasagne 3× za měsíc</strong><div class="desc">Nowaco Lasagne bolognese — 3× v posledních 4 objednávkách. Vysoký obsah soli a tuku. Mleté hovězí + těstoviny už máte v košíku — ušetříte i kalorie.</div></div><div class="item-meta warn">280 Kč</div></li>
+        <li><div class="item-icon warn">🥐</div><div class="item-text"><strong>Pekařské polotovary Minit Home</strong><div class="desc">5× balení (hot-dogy, šunko-sýrové, malinové, pizza-sýr, croissanty) — ultra-zpracovaná pšenice + tuk. Zkuste je nahradit žitným chlebem.</div></div><div class="item-meta warn">374 Kč</div></li>
+        <li><div class="item-icon info">🍦</div><div class="item-text"><strong>Limonády a dezerty</strong><div class="desc">2× Carte d'Or, M&amp;S limonáda, San Benedetto Aranciata. I „zero" verze obsahují sladidla, která mohou zhoršit trávení.</div></div><div class="item-meta info">173 Kč</div></li>
+        <li><div class="item-icon good">✅</div><div class="item-text"><strong>Co děláte dobře</strong><div class="desc">Norský losos · kuřecí prsa · krevety · brokolice · cherry rajčata · kysané zelí · 8 příchutí jogurtu Hollandia · česnek · petržel. Skvělý základ.</div></div><div class="item-meta good">~1 100 Kč</div></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>💰 Kde můžete ušetřit</h2>
+      <p class="subtitle">Konkrétní položky a chování v košíku</p>
+      <ul class="item-list">
+        <li><div class="item-icon good">📦</div><div class="item-text"><strong>Slučte malé EXPRESS objednávky</strong><div class="desc">25. a 28. dubna jste objednal 2× během 3 dnů. Sloučení do jedné objednávky šetří balné (15 Kč) a omezuje impulzivní nákupy.</div></div><div class="item-meta good">~60 Kč/měs</div></li>
+        <li><div class="item-icon good">🍝</div><div class="item-text"><strong>Vařte lasagne sami</strong><div class="desc">3× Nowaco Lasagne (280 Kč) vs. domácí ze surovin, které máte (mleté maso, smetana, sýr): náklady ~120 Kč na 2 porce.</div></div><div class="item-meta good">~160 Kč/měs</div></li>
+        <li><div class="item-icon good">🥣</div><div class="item-text"><strong>Vyřaďte cukrové cereálie</strong><div class="desc">Nesquik, Chocapic, Bonavita XXL — průměr 75 Kč/balení. Ovesné vločky (cca 30 Kč/500 g) + ovoce vyjdou na polovinu a sytí déle.</div></div><div class="item-meta good">~150 Kč/měs</div></li>
+        <li><div class="item-icon good">🥐</div><div class="item-text"><strong>Méně Minit Home rolek</strong><div class="desc">5× balení po 74,90 Kč (374 Kč). Kupujte 1× pro radost — ne 5× jako základ stravy.</div></div><div class="item-meta good">~200 Kč/měs</div></li>
+        <li><div class="item-icon info">🥛</div><div class="item-text"><strong>Omezte počet příchutí jogurtu</strong><div class="desc">V jedné objednávce 8 různých příchutí Hollandia (173 Kč). Vyberte 2–3 oblíbené ve větším balení — méně plastu, méně přidaného cukru u ochucených.</div></div><div class="item-meta info">~50 Kč/měs</div></li>
+        <li><div class="item-icon info">⭐</div><div class="item-text"><strong>XTRA výhody dobíhají 31. 5.</strong><div class="desc">Máte ještě 3 expresy zdarma a 3 objednávky bez minimální hodnoty. Využijte je na kompletní nákup, ne na malé doplnění.</div></div><div class="item-meta info">~80 Kč</div></li>
+      </ul>
+      <div class="savings-summary">
+        <div class="saving-box"><div class="label">Měsíční úspora</div><div class="value">~620 Kč</div></div>
+        <div class="saving-box"><div class="label">Roční úspora</div><div class="value">~7 440 Kč</div></div>
+        <div class="saving-box"><div class="label">Plus zdraví</div><div class="value">💚 ✓</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card full-card">
+    <h2>🎯 Akční plán na příští objednávku</h2>
+    <p class="subtitle">Co konkrétně přidat, vyměnit a vynechat</p>
+    <table>
+      <thead><tr><th>Typ</th><th>Místo toho</th><th>Vyzkoušejte</th><th class="right">Dopad</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge danger">Nahradit</span></td><td>Nestlé Nesquik / Chocapic</td><td>Ovesné vločky Emco + banán + Hollandia bílý jogurt</td><td class="right">−150 Kč · −40 g cukru</td></tr>
+        <tr><td><span class="badge danger">Nahradit</span></td><td>Nowaco Lasagne hotová</td><td>Vlastní lasagne ze surovin (těstoviny, maso, smetana, sýr)</td><td class="right">−160 Kč · méně soli</td></tr>
+        <tr><td><span class="badge warn">Omezit</span></td><td>Minit Home rolky 5×</td><td>Pouze 1 balení jako odměnu</td><td class="right">−300 Kč · −50 g tuku</td></tr>
+        <tr><td><span class="badge warn">Omezit</span></td><td>Carte d'Or, croissanty 7 Days, koláč makový</td><td>Tvaroh s ovocem, hořká čokoláda 70 %</td><td class="right">−100 Kč · −60 g cukru</td></tr>
+        <tr><td><span class="badge good">Přidat</span></td><td>—</td><td>Ovesné vločky · luštěniny (čočka, cizrna) · ořechy · BIO vejce</td><td class="right">+120 Kč · +20 g vlákniny</td></tr>
+        <tr><td><span class="badge good">Zachovat</span></td><td>—</td><td>Norský losos · kuřecí prsa · brokolice · kysané zelí · jogurt bílý</td><td class="right">váš silný základ</td></tr>
+        <tr><td><span class="badge info">Sloučit</span></td><td>2 objednávky během 3 dnů</td><td>1 plná objednávka týdně</td><td class="right">−60 Kč balné</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card full-card">
+    <h2>🏆 Top 10 položek podle útraty</h2>
+    <p class="subtitle">Kde nejvíc utrácíte — a jestli to dává smysl</p>
+    <table>
+      <thead><tr><th>#</th><th>Produkt</th><th>Kategorie</th><th class="right">Cena</th><th>Hodnocení</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Koktejlové krevety předvařené 0,8 kg</td><td>Mořské plody</td><td class="right">350 Kč</td><td><span class="badge good">Zdravé</span></td></tr>
+        <tr><td>2</td><td>RENNIE 96 ks</td><td>Léky</td><td class="right">330 Kč</td><td><span class="badge danger">Symptom</span></td></tr>
+        <tr><td>3</td><td>Pelmen Hovězí pelmeně 0,8 kg</td><td>Mražené</td><td class="right">235 Kč</td><td><span class="badge warn">Občas</span></td></tr>
+        <tr><td>4</td><td>Kuřecí prsní řízky XXL 1 kg</td><td>Maso</td><td class="right">218 Kč</td><td><span class="badge good">Zdravé</span></td></tr>
+        <tr><td>5</td><td>LOPERON 20 ks</td><td>Léky</td><td class="right">190 Kč</td><td><span class="badge danger">Symptom</span></td></tr>
+        <tr><td>6</td><td>MASO! Hovězí mletý 0,6 kg</td><td>Maso</td><td class="right">180 Kč</td><td><span class="badge good">Zdravé</span></td></tr>
+        <tr><td>7</td><td>Norský losos filet 300 g</td><td>Ryby</td><td class="right">157 Kč</td><td><span class="badge good">Skvělé</span></td></tr>
+        <tr><td>8</td><td>Nestlé Nesquik cereálie 375 g</td><td>Cereálie</td><td class="right">129 Kč</td><td><span class="badge danger">Vyřadit</span></td></tr>
+        <tr><td>9</td><td>Miil Grana Padano 200 g</td><td>Sýr</td><td class="right">108 Kč</td><td><span class="badge good">Kvalita</span></td></tr>
+        <tr><td>10</td><td>Bonavita XXL Jeníkův lup</td><td>Snack</td><td class="right">100 Kč</td><td><span class="badge danger">Vyřadit</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    Dashboard generován z dat Rohlik MCP · Ilia Shalkin · 27. 5. 2026<br/>
+    Doporučení jsou orientační, neslouží jako lékařská rada.
+  </div>
+
+</div>
+
+<script>
+  Chart.defaults.color = '#8b96a7';
+  Chart.defaults.borderColor = '#2a3441';
+  Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+  new Chart(document.getElementById('orderChart'), {
+    type: 'bar',
+    data: {
+      labels: ['1. 4.', '25. 4.', '28. 4.', '1. 5.'],
+      datasets: [{ label: 'CZK', data: [1973.42, 1143.85, 593.59, 740.29], backgroundColor: ['#00b53f', '#ffb547', '#ff5c5c', '#4fc3f7'], borderRadius: 8, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: v => v + ' Kč' }, grid: { color: '#2a3441' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Maso & ryby', 'Zelenina & ovoce', 'Mléčné', 'Pečivo & cereálie', 'Sladké & snack', 'Hotová jídla', 'Ostatní'],
+      datasets: [{ data: [1130, 470, 690, 580, 470, 380, 151], backgroundColor: ['#4fc3f7', '#00b53f', '#9ccc65', '#ffb547', '#ff5c5c', '#ce93d8', '#90a4ae'], borderColor: '#1a1f29', borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed + ' Kč' } } },
+      cutout: '62%'
+    }
+  });
+</script>
+</body>
+</html>
